@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>&Uuml;bermensch &mdash; fangs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#08080a;
+    --ink:#f1efe9;
+    --ink-dim:#7a7a82;
+    --accent:#8ef0c8;   /* glinting mint */
+    --bite:#ff3b54;     /* fang red */
+    --line: rgba(241,239,233,0.12);
+    --pulse-size: 14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Space Grotesk', sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* ambient cursor glow */
+  #glow{
+    position:fixed;
+    top:0;left:0;
+    width:600px;height:600px;
+    pointer-events:none;
+    background:radial-gradient(circle, rgba(142,240,200,0.06) 0%, rgba(142,240,200,0) 70%);
+    transform:translate(-50%,-50%);
+    z-index:0;
+    transition:opacity .3s ease;
+  }
+
+  header{
+    position:relative;
+    z-index:2;
+    padding:6vh 6vw 3vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.35em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    margin-bottom:14px;
+  }
+  h1{
+    font-size:clamp(28px, 5vw, 56px);
+    font-weight:700;
+    letter-spacing:-0.01em;
+    margin:0;
+    line-height:1;
+  }
+  .sub{
+    margin-top:14px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--ink-dim);
+    letter-spacing:0.05em;
+  }
+
+  main{
+    position:relative;
+    z-index:2;
+    display:flex;
+    justify-content:center;
+    padding:0 5vw 8vh;
+  }
+
+  #stage{
+    position:relative;
+    width:min(88vw, 78vh, 900px);
+    aspect-ratio:1/1;
+    border:1px solid var(--line);
+    box-shadow:0 40px 120px -30px rgba(0,0,0,0.8);
+  }
+  #stage img{
+    width:100%;
+    height:100%;
+    display:block;
+    user-select:none;
+    -webkit-user-drag:none;
+  }
+
+  .hotspot{
+    position:absolute;
+    width:var(--pulse-size);
+    height:var(--pulse-size);
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    cursor:pointer;
+    background:transparent;
+    border:1px solid rgba(241,239,233,0.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .hotspot::before{
+    content:'';
+    position:absolute;
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    background:var(--accent);
+    opacity:0.35;
+    animation:pulse 2.6s ease-in-out infinite;
+  }
+  .hotspot:nth-child(3n)::before{ animation-delay:.4s; }
+  .hotspot:nth-child(4n)::before{ animation-delay:.9s; }
+  .hotspot:nth-child(5n)::before{ animation-delay:1.3s; }
+
+  @keyframes pulse{
+    0%,100%{ transform:scale(1); opacity:0.25; }
+    50%{ transform:scale(2.1); opacity:0; }
+  }
+
+  .hotspot:hover{
+    border-color:var(--bite);
+    background:rgba(255,59,84,0.15);
+  }
+  .hotspot:hover::before{
+    background:var(--bite);
+  }
+
+  .tip{
+    position:absolute;
+    bottom:130%;
+    left:50%;
+    transform:translateX(-50%) translateY(4px);
+    background:var(--ink);
+    color:var(--bg);
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    font-weight:500;
+    padding:7px 10px;
+    white-space:nowrap;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .15s ease, transform .15s ease;
+    letter-spacing:0.02em;
+  }
+  .tip::after{
+    content:'';
+    position:absolute;
+    top:100%;
+    left:50%;
+    transform:translateX(-50%);
+    border:5px solid transparent;
+    border-top-color:var(--ink);
+  }
+  .hotspot:hover .tip{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+
+  .track-no{
+    font-family:'JetBrains Mono', monospace;
+    font-size:9px;
+    color:var(--ink-dim);
+    opacity:0;
+    transition:opacity .15s ease;
+  }
+  .hotspot:hover .track-no{ opacity:0; }
+
+  footer{
+    position:relative;
+    z-index:2;
+    text-align:center;
+    padding:0 6vw 6vh;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    letter-spacing:0.1em;
+    color:var(--ink-dim);
+    text-transform:uppercase;
+  }
+
+  /* ---------- EDIT MODE ---------- */
+  body.edit-mode .hotspot{
+    background:rgba(142,240,200,0.15);
+    border:1px dashed var(--accent);
+  }
+  body.edit-mode .hotspot::before{ display:none; }
+  body.edit-mode .hotspot{ cursor:grab; }
+  body.edit-mode .hotspot.dragging{ cursor:grabbing; }
+  body.edit-mode .track-no{ opacity:1; color:var(--accent); font-weight:700; }
+
+  #editPanel{
+    display:none;
+    position:fixed;
+    top:0;
+    right:0;
+    width:340px;
+    height:100vh;
+    background:#111014;
+    border-left:1px solid var(--line);
+    z-index:10;
+    padding:20px;
+    overflow-y:auto;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+  }
+  body.edit-mode #editPanel{ display:block; }
+  body.edit-mode main{ padding-right:calc(5vw + 340px); }
+
+  #editPanel h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:15px;
+    margin:0 0 4px;
+  }
+  #editPanel p{
+    color:var(--ink-dim);
+    line-height:1.5;
+    margin:0 0 16px;
+  }
+  #editPanel textarea{
+    width:100%;
+    height:220px;
+    background:#000;
+    color:var(--accent);
+    border:1px solid var(--line);
+    padding:10px;
+    font-family:inherit;
+    font-size:10px;
+    resize:vertical;
+  }
+  #editPanel button{
+    margin-top:10px;
+    width:100%;
+    background:var(--accent);
+    color:#000;
+    border:none;
+    padding:10px;
+    font-family:inherit;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.05em;
+    cursor:pointer;
+    text-transform:uppercase;
+  }
+  #editPanel button:hover{ background:var(--ink); }
+  .edit-track{
+    border-top:1px solid var(--line);
+    padding:10px 0;
+  }
+  .edit-track label{
+    display:block;
+    color:var(--ink-dim);
+    margin-bottom:4px;
+  }
+  .edit-track input[type="text"]{
+    width:100%;
+    background:#000;
+    border:1px solid var(--line);
+    color:var(--ink);
+    padding:6px;
+    font-family:inherit;
+    font-size:11px;
+    margin-bottom:4px;
+  }
+  .coords{ color:var(--ink-dim); font-size:10px; }
+</style>
+</head>
+<body>
+
+<div id="glow"></div>
+
+<header>
+  <div class="eyebrow">fangs</div>
+  <h1>&Uuml;bermensch</h1>
+  <div class="sub">explore the art, click to listen</div>
+</header>
+
+<main>
+  <div id="stage">
+    <img src="cover.jpg" alt="Fangs Electronica album artwork" id="artwork">
+    <!-- hotspots injected by JS -->
+  </div>
+</main>
+
+<footer>13 tracks &middot; streaming on soundcloud</footer>
+
+<div id="editPanel">
+  <h2>Edit Mode</h2>
+  <p>Drag each dot onto the right spot in the artwork. Edit titles below. When you're done, copy the array and send it back so it can be baked into the site permanently (this only saves in your browser).</p>
+  <div id="trackFields"></div>
+  <button id="exportBtn">Copy updated coordinates</button>
+  <textarea id="exportOut" placeholder="Updated TRACKS array will appear here on export..."></textarea>
+</div>
+
+<script>
+/* ============================================================
+   TRACKLIST — edit titles/urls here any time.
+   x / y are percentages (0–100) of the artwork's width/height.
+   Open the site with ?edit=1 to drag dots into place visually,
+   then click "Copy updated coordinates" and paste the result
+   back in here.
+   ============================================================ */
+const TRACKS = [
+  { title: "prelude to a broken mind", url: "https://soundcloud.com/1fangs/im-drunk-phils-an-asshole-intro/s-3ZJ8OS8Rw9R", x: 61, y: 68.3 },
+  { title: "VivaLaVida, Aviva", url: "https://soundcloud.com/1fangs/8b9a8594-de0d-4ed0-a88a-9274bf8c7349/s-GEeSo2DI8cb", x: 16.3, y: 64.2 },
+  { title: "Thnking Abt Life", url: "https://soundcloud.com/alt3-727108080/thnking-abt-life", x: 68.6, y: 37.4 },
+  { title: "Do not send me voicemails", url: "https://soundcloud.com/1fangs/rec-snorn-verse-bridge-chorus", x: 15, y: 21.5 },
+  { title: "Early In The Morning", url: "https://soundcloud.com/1fangs/early-in-the-morning-demo", x: 57.2, y: 32.1 },
+  { title: "Cast Away", url: "https://soundcloud.com/1fangs/cast-away-meta-fangs", x: 24, y: 34.8 },
+  { title: "Heart Rate", url: "https://soundcloud.com/1fangs/heart-rate/s-B96Av2g8Rkx", x: 77.5, y: 34.8 },
+  { title: "Memory", url: "https://soundcloud.com/1fangs/rmmbr/s-agoGePs0mB4", x: 72, y: 95 },
+  { title: "Never Let You Know", url: "https://soundcloud.com/1fangs/never-let-you-know/s-LCc6xkVWw29", x: 71.7, y: 69.4 },
+  { title: "Fly Away", url: "https://soundcloud.com/1fangs/dimple-fangs-i-try-demo/s-bCJC0hA36sL", x: 37.8, y: 19.1 },
+  { title: "Conversations lead to resolution", url: "https://soundcloud.com/1fangs/conversation/s-ilcSomtesoS", x: 44.4, y: 34.4 },
+  { title: "I'll Be Fine", url: "https://soundcloud.com/1fangs/ill-be-fine-meta", x: 55.7, y: 74.9 },
+  { title: "Overcame it all", url: "https://soundcloud.com/alt3-727108080/hidethenseek", x: 95.3, y: 5.6 },
+];
+
+const stage = document.getElementById('stage');
+const params = new URLSearchParams(location.search);
+const editMode = params.get('edit') === '1';
+if(editMode) document.body.classList.add('edit-mode');
+
+function render(){
+  // clear existing hotspots
+  stage.querySelectorAll('.hotspot').forEach(el => el.remove());
+
+  TRACKS.forEach((t, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'hotspot';
+    dot.style.left = t.x + '%';
+    dot.style.top = t.y + '%';
+    dot.dataset.index = i;
+
+    const tip = document.createElement('div');
+    tip.className = 'tip';
+    tip.textContent = t.title;
+    dot.appendChild(tip);
+
+    const no = document.createElement('div');
+    no.className = 'track-no';
+    no.textContent = String(i+1).padStart(2,'0');
+    dot.appendChild(no);
+
+    if(editMode){
+      dot.addEventListener('pointerdown', startDrag);
+    } else {
+      dot.addEventListener('click', () => {
+        window.open(t.url, '_blank', 'noopener');
+      });
+    }
+
+    stage.appendChild(dot);
+  });
+}
+
+let dragTarget = null;
+function startDrag(e){
+  dragTarget = e.currentTarget;
+  dragTarget.classList.add('dragging');
+  window.addEventListener('pointermove', onDrag);
+  window.addEventListener('pointerup', endDrag);
+}
+function onDrag(e){
+  if(!dragTarget) return;
+  const rect = stage.getBoundingClientRect();
+  let x = ((e.clientX - rect.left) / rect.width) * 100;
+  let y = ((e.clientY - rect.top) / rect.height) * 100;
+  x = Math.max(0, Math.min(100, x));
+  y = Math.max(0, Math.min(100, y));
+  const i = dragTarget.dataset.index;
+  TRACKS[i].x = Math.round(x*10)/10;
+  TRACKS[i].y = Math.round(y*10)/10;
+  dragTarget.style.left = x + '%';
+  dragTarget.style.top = y + '%';
+  updateFieldCoords(i);
+}
+function endDrag(){
+  if(dragTarget) dragTarget.classList.remove('dragging');
+  dragTarget = null;
+  window.removeEventListener('pointermove', onDrag);
+  window.removeEventListener('pointerup', endDrag);
+}
+
+function updateFieldCoords(i){
+  const el = document.querySelector('.coords[data-i="'+i+'"]');
+  if(el) el.textContent = `x: ${TRACKS[i].x}%  y: ${TRACKS[i].y}%`;
+}
+
+function buildPanel(){
+  if(!editMode) return;
+  const wrap = document.getElementById('trackFields');
+  TRACKS.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'edit-track';
+    row.innerHTML = `
+      <label>${String(i+1).padStart(2,'0')} — title</label>
+      <input type="text" data-i="${i}" data-field="title" value="${t.title.replace(/"/g,'&quot;')}">
+      <div class="coords" data-i="${i}">x: ${t.x}%  y: ${t.y}%</div>
+    `;
+    wrap.appendChild(row);
+  });
+  wrap.addEventListener('input', (e) => {
+    const i = e.target.dataset.i;
+    const field = e.target.dataset.field;
+    if(field === 'title'){
+      TRACKS[i].title = e.target.value;
+      render();
+    }
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const lines = TRACKS.map(t =>
+      `  { title: "${t.title.replace(/"/g,'\\"')}", url: "${t.url}", x: ${t.x}, y: ${t.y} },`
+    );
+    const out = "const TRACKS = [\n" + lines.join('\n') + "\n];";
+    const box = document.getElementById('exportOut');
+    box.value = out;
+    box.select();
+    document.execCommand('copy');
+  });
+}
+
+render();
+buildPanel();
+
+// ambient cursor glow
+const glow = document.getElementById('glow');
+window.addEventListener('pointermove', (e) => {
+  glow.style.transform = `translate(${e.clientX}px, ${e.clientY}px) translate(-50%,-50%)`;
+});
+</script>
+
+</body>
+</html>
